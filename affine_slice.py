@@ -9,6 +9,7 @@ import cv2
 from PIL import Image, ImageOps
 import matplotlib.pyplot as plt  # 描画用
 import scipy.interpolate as interpolate
+import pandas as pd
 
 import SimpleITK as sitk
 import tensorflow.python
@@ -92,6 +93,7 @@ def transform_img(slice_seg, slice_vol):
     clip_seg = rotate_seg_a[TY - PADDING_SIZE:UY + PADDING_SIZE, LX - PADDING_SIZE:RX + PADDING_SIZE]
     box_shape = clip_seg.shape
 
+
     clip_vol = cv2.resize(
         clip_vol,
         dsize=(
@@ -106,7 +108,7 @@ def transform_img(slice_seg, slice_vol):
             FIXED_SIZES[folder_num]),
         interpolation=cv2.INTER_CUBIC)
 
-    return clip_vol, clip_seg, degree, center
+    return clip_seg, clip_vol, clip_seg.shape, degree, center
 
 
 if __name__ == "__main__":
@@ -127,13 +129,14 @@ if __name__ == "__main__":
         'center1'
     ])
 
-    for q in tqdm_notebook(range(210)):
+    for cid in range(210):
+        print(cid)
         seg_path = os.path.join(
             r"C:\Users\higuchi\Desktop\kits19\data\case_00" +
             str(cid).zfill(3),
             "segmentation.nii.gz")
         vol_path = os.path.join(r"C:\Users\higuchi\Desktop\kits19\data\case_00" + str(cid).zfill(3), "imaging.nii.gz")
-        raw_vol, raw_seg = load_data(q)
+        raw_vol, raw_seg = load_data(cid,seg_path,vol_path)
 
         count = 0
 
@@ -147,23 +150,26 @@ if __name__ == "__main__":
             slice_vol = raw_vol[:, :, x]
             slice_seg = raw_seg[:, :, x]
 
-            clip_seg, clip_vol, degree, center = transform_img(slice_seg, slice_vol)
+            try:
+                clip_seg, clip_vol,clip_seg_shape, degree, center = transform_img(slice_seg, slice_vol)
+            except:
+                continue
 
-            if i % number == 0 and folder_num < 10:
+            if i % number == 0 and folder_num < 9:
                 folder_num += 1
 
             clip_seg = sitk.GetImageFromArray(clip_seg)
             clip_vol = sitk.GetImageFromArray(clip_vol)
 
-            # print("saving cut to", str(q)+"imagefragment"+str(i), end="...", flush=True)
+            # print("saving cut to", str(cid)+"imagefragment"+str(i), end="...", flush=True)
             label_path = os.path.join(
                 r"C:\Users\higuchi\Desktop\LAB\201906_\segmentation\data\label_sagittal\case_00" +
-                str(q).zfill(3),
+                str(cid).zfill(3),
                 str(folder_num))
 
             image_path = os.path.join(
                 r"C:\Users\higuchi\Desktop\LAB\201906_\segmentation\data\image_sagittal\case_00" +
-                str(q).zfill(3),
+                str(cid).zfill(3),
                 str(folder_num))
 
             os.makedirs(label_path, exist_ok=True)
@@ -175,13 +181,19 @@ if __name__ == "__main__":
             seg_jpg_path = os.path.join(label_path, "label{}.jpg".format(i))
             vol_jpg_path = os.path.join(image_path, "image{}.jpg".format(i))
 
-            sitk.WriteImage(clip_seg, seg_path, True)
-            sitk.WriteImage(clip_vol, vol_path, True)
+            try:
+                sitk.WriteImage(clip_seg, seg_path, True)
+                sitk.WriteImage(clip_vol, vol_path, True)
+            except:
+                print(path)
+                pass
 
             count += 1
+            datalist = [seg_path, PADDING_SIZE, clip_seg_shape[0], clip_seg_shape[1],
+                        slice_seg.shape[0], slice_seg.shape[1],
+                        degree, center[0], center[1]]
+            log_row=pd.Series(datalist,index=log_df.columns)
 
-            log_df.iloc[count, :] = [seg_path, PADDING_SIZE, clip_seg[0], clip_seg[1],
-                                     slice_seg.shape[0], slice_seg.shape[1],
-                                     degree, center[0], center[1]]
+            log_df = log_df.append(log_row, ignore_index=True)
 
     log_df.to_csv('./log_df.csv')

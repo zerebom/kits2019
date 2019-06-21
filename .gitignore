@@ -1,2 +1,7 @@
 data/*
 ./logs/*
+./Result/*
+*csv
+events.out.tfevents*
+*png
+*pyc

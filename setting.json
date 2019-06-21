@@ -1,0 +1,20 @@
+{
+        "dataset_path": {
+            "sagittal_image": "C:/Users/higuchi/Desktop/LAB/201906_/segmentation/data/image_sagittal",
+            "sagittal_label": "C:/Users/higuchi/Desktop/LAB/201906_/segmentation/data/label_sagittal"
+            
+        },
+        "FIXED_SIZES":[
+            128,
+            256,
+            256,
+            256,
+            128,
+            128,
+            256,
+            256,
+            256,
+            128
+        ]
+
+}

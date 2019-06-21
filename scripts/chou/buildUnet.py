@@ -168,21 +168,6 @@ def CreateConvBlock(x, filters, n = 2, use_bn = True, apply_pooling = True, name
 
     return x, convresult
 
-# def CreateConvBlockwithLSTM(x, filters, n = 2, use_bn = True, apply_pooling = True, name = 'convblock'):
-#     x = tf.keras.layers.Conv2D(filters, (3,3), padding='same', name=name+'_conv'+str(i))(x)
-#     if use_bn:
-#         x = tf.keras.layers.BatchNormalization(name=name+'_BN'+str(i))(x)
-#     x = tf.keras.layers.Activation('relu', name=name+'_relu'+str(i))(x)
-
-#     x = tf.keras.layers.Reshape()
-
-#     convresult = x
-
-#     if apply_pooling:
-#         x = tf.keras.layers.MaxPool2D(pool_size=(2,2), name=name+'_pooling')(x)
-
-#     return x, convresult
-
 
 def CreateUpConvBlock(x, contractpart, filters, n = 2, use_bn = True, name = 'upconvblock'):
     # upconv x
