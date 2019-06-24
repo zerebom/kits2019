@@ -11,9 +11,9 @@ from tensorflow.python.keras.layers import LeakyReLU, BatchNormalization, Activa
 
 
 class UNet:
-    def __init__(self, input_channel_count, output_channel_count, first_layer_filter_count, parser):
+    def __init__(self, input_channel_count, output_channel_count, first_layer_filter_count,im_size, parser):
         self.name = self.__class__.__name__.lower()
-        self.INPUT_IMAGE_SIZE = 256
+        self.INPUT_IMAGE_SIZE = 128
         self.CONCATENATE_AXIS = -1
         self.CONV_FILTER_SIZE = 4
         self.CONV_STRIDE = 2

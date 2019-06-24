@@ -62,6 +62,9 @@ def transform_img(slice_seg, slice_vol):
     # 最大領域の取得
     max_id = np.argmax(np.array([cv2.contourArea(cnt) for cnt in contours]))
     max_countor = contours[max_id]
+    
+    #面積
+    area = cv2.contourArea(max_countor)
     rect = cv2.minAreaRect(max_countor)
 
     # 回転点,領域の大きさ,回転角
@@ -108,7 +111,7 @@ def transform_img(slice_seg, slice_vol):
             FIXED_SIZES[folder_num]),
         interpolation=cv2.INTER_CUBIC)
 
-    return clip_seg, clip_vol, clip_seg.shape, degree, center
+    return clip_seg, clip_vol, clip_seg.shape, degree, center,area
 
 
 if __name__ == "__main__":
@@ -124,6 +127,7 @@ if __name__ == "__main__":
         'roi_shape1',
         'raw_shape0',
         'raw_shape1',
+        'area',
         'degree',
         'center0',
         'center1'
@@ -151,24 +155,24 @@ if __name__ == "__main__":
             slice_seg = raw_seg[:, :, x]
 
             try:
-                clip_seg, clip_vol,clip_seg_shape, degree, center = transform_img(slice_seg, slice_vol)
+                clip_seg, clip_vol,clip_seg_shape, degree, center,area = transform_img(slice_seg, slice_vol)
             except:
                 continue
 
             if i % number == 0 and folder_num < 9:
                 folder_num += 1
 
-            clip_seg = sitk.GetImageFromArray(clip_seg)
-            clip_vol = sitk.GetImageFromArray(clip_vol)
+            # clip_seg = sitk.GetImageFromArray(clip_seg)
+            # clip_vol = sitk.GetImageFromArray(clip_vol)
 
             # print("saving cut to", str(cid)+"imagefragment"+str(i), end="...", flush=True)
             label_path = os.path.join(
-                r"C:\Users\higuchi\Desktop\LAB\201906_\segmentation\data\label_sagittal\case_00" +
+                r"C:\Users\higuchi\Desktop\LAB\201906_\segmentation\data\label_sagittal2\case_00" +
                 str(cid).zfill(3),
                 str(folder_num))
 
             image_path = os.path.join(
-                r"C:\Users\higuchi\Desktop\LAB\201906_\segmentation\data\image_sagittal\case_00" +
+                r"C:\Users\higuchi\Desktop\LAB\201906_\segmentation\data\image_sagittal2\case_00" +
                 str(cid).zfill(3),
                 str(folder_num))
 
@@ -190,7 +194,7 @@ if __name__ == "__main__":
 
             count += 1
             datalist = [seg_path, PADDING_SIZE, clip_seg_shape[0], clip_seg_shape[1],
-                        slice_seg.shape[0], slice_seg.shape[1],
+                        slice_seg.shape[0], slice_seg.shape[1],area,
                         degree, center[0], center[1]]
             log_row=pd.Series(datalist,index=log_df.columns)
 

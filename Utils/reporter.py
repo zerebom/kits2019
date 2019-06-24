@@ -22,6 +22,7 @@ class Reporter:
         self.create_dirs()
         self.parameters = list()
         self.parser = parser
+        self.d_num = parser.d_num
     # def make_main_dir(self):
 
     def add_model_name(self, model_name):
@@ -31,10 +32,14 @@ class Reporter:
         self.model_name = model_name
 
     def add_val_loss(self, val_loss):
-        self.val_loss = str(round(min(val_loss)))
+        self.val_loss = str(round(min(val_loss),2))
+
+    def add_val_dice(self, val_dice):
+        self.val_dice = str(round(max(val_dice),2))
 
     def generate_main_dir(self):
-        main_dir = self.val_loss + '_' + dt.today().strftime("%Y%m%d_%H%M") + '_' + self.model_name
+        # main_dir = self.val_loss + '_' + dt.today().strftime("%Y%m%d_%H%M") + '_' + self.model_name
+        main_dir = str(self.d_num) + '_' + self.val_dice + '_' + dt.today().strftime("%Y%m%d_%H%M") + '_' + self.model_name
         self.main_dir = os.path.join(self._root_dir, main_dir)
         os.makedirs(self.main_dir, exist_ok=True)
 
@@ -62,6 +67,19 @@ class Reporter:
             plt.ylim(0, int(history.history['val_loss'][9] * 1.1))
 
         plt.savefig(os.path.join(self.main_dir, title + '_remove_outlies_' + self.IMAGE_EXTENSION))
+
+        plt.figure()
+        plt.plot(history.history['dice'], linewidth=1.5, marker='o')
+        plt.plot(history.history['val_dice'], linewidth=1., marker='o')
+        plt.tick_params(labelsize=20)
+        plt.title('model dice')
+        plt.xlabel('epoch')
+        plt.ylabel('dice')
+        plt.legend(['dice', 'val_dice'], loc='upper right', fontsize=18)
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.main_dir, 'dice' + self.IMAGE_EXTENSION))
+
+
 
     def add_log_documents(self, add_message):
         self.parameters.append(add_message)
@@ -93,16 +111,32 @@ class Reporter:
             batch_num=1) -> 'im':
         for i in range(batch_input.shape[0]):
             os.makedirs(os.path.join(self.main_dir, save_folder), exist_ok=True)
+            
+            #one_hot->grayscaleに変換している。
+            pred = np.argmax(batch_pred[i, :, :, :],axis=2)
+            teach = np.argmax(batch_teach[i, :, :, :],axis=2)
 
-            seg=np.hstack((batch_pred[i, :, :, :],batch_teach[i, :, :, :]))
+            seg=np.hstack((pred,teach))
+            seg = np.where(seg == 1, 128, seg)
+            seg = np.where(seg == 2, 255, seg)
+            #3次元に展開
+            seg=seg[:,:,np.newaxis]
+            seg_im = seg.astype(np.uint8)
+            
             vol =batch_input[i, :, :, :]
+            vol=255*vol/(np.max(vol)-np.min(vol))
+            vol_im=vol.astype(np.uint8)
             
-            plt.figure()
-            plt.imshow(seg, cmap='Greys_r', origin='lower')
-            plt.savefig(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
+            array_to_img(vol_im).save(os.path.join(self.main_dir,save_folder,f'input_{self.parser.batch_size*batch_num+i}.png'))
+            array_to_img(seg_im).save(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
+
+
+            # plt.figure()
+            # plt.imshow(seg, cmap='Greys_r', origin='lower')
+            # plt.savefig(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
             
-            plt.figure()
-            plt.imshow(vol, cmap='Greys_r', origin='lower')
-            plt.savefig(os.path.join(self.main_dir, save_folder, f'input_{self.parser.batch_size*batch_num+i}.png'))
+            # plt.figure()
+            # plt.imshow(vol, cmap='Greys_r', origin='lower')
+            # plt.savefig(os.path.join(self.main_dir, save_folder, f'input_{self.parser.batch_size*batch_num+i}.png'))
 
 

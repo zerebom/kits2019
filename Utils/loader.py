@@ -8,6 +8,7 @@ import math
 import random
 import SimpleITK as sitk
 import cv2
+from keras.utils import np_utils
 
 config = json.load(open('./setting.json'))
 D_num = 1
@@ -56,8 +57,8 @@ class Loader:
         self.test_steps = math.ceil(len(self.test_seg_list) / self.batch_size)
 
         self.train_gen = self.generator_with_preprocessing(self.train_vol_list, self.train_seg_list, self.batch_size)
-        self.valid_gen = self.generator_with_preprocessing(self.valid_vol_list, self.train_seg_list, self.batch_size)
-        self.test_gen = self.generator_with_preprocessing(self.test_vol_list, self.train_seg_list, self.batch_size)
+        self.valid_gen = self.generator_with_preprocessing(self.valid_vol_list, self.valid_seg_list, self.batch_size)
+        self.test_gen = self.generator_with_preprocessing(self.test_vol_list, self.test_seg_list, self.batch_size)
         return self.train_gen, self.valid_gen, self.test_gen
 
     def return_step(self):
@@ -76,15 +77,19 @@ class Loader:
 
         return train_list, valid_list, test_list
 
-    def load_batch_img_array(self, batch_vol,batch_seg, prepro_callback=False):
+    def load_batch_img_array(self, batch_vol_path,batch_seg_path, prepro_callback=False):
         seg_img_list = []
         vol_img_list = []
-        for vol,seg in zip(batch_vol,batch_seg):
-            vol = sitk.ReadImage(vol)
-            seg = sitk.ReadImage(seg)
+        for vol,seg in zip(batch_vol_path,batch_seg_path):
+            vol_img = sitk.ReadImage(vol)
+            seg_img = sitk.ReadImage(seg)
 
-            vol_img = sitk.GetArrayFromImage(vol)
-            seg_img = sitk.GetArrayFromImage(seg)
+            vol_img = sitk.GetArrayFromImage(vol_img)
+            seg_img = sitk.GetArrayFromImage(seg_img)
+            #3が含まれているファイルのパスはこれで確認できる
+            # if np.max(seg_img)==3:
+            #     print(seg)
+
             
             #データサイズが違ったときはリサイズ
             if vol_img.shape != (self.im_size, self.im_size):
@@ -93,8 +98,19 @@ class Loader:
             if seg_img.shape != (self.im_size, self.im_size):
                 seg_img = cv2.resize(seg_img, dsize=(self.im_size, self.im_size), interpolation=cv2.INTER_CUBIC)
 
+                #たまに2以上の値が含まれているので取り除く。
+            # print('segmax2:', np.max(seg_img))
+
+            seg_img=np.clip(seg_img, 0, 2)
+            # print('segmax3:', np.max(seg_img))
+
+
+
+            seg_img=np_utils.to_categorical(seg_img, num_classes=3)
+            
             vol_img_list.append(vol_img)
             seg_img_list.append(seg_img)
+
 
         vol_img_list = np.stack(vol_img_list)
         seg_img_list = np.stack(seg_img_list)
@@ -103,8 +119,7 @@ class Loader:
         vol_img_list = vol_img_list[:, : , : , np.newaxis]
         # seg_img_list = seg_img_list[:, :, :, np.newaxis]
         # print(seg_img_list.shape)
-        from keras.utils import np_utils
-        seg_img_list = np_utils.to_categorical(seg_img_list, num_classes=4)
+        
         # print(seg_img_list.shape)
 
 
@@ -114,8 +129,8 @@ class Loader:
     def generator_with_preprocessing(self, vol_path_list,seg_path_list, batch_size):  # , *input_paths
         while True:
             for i in range(0, len(vol_path_list), batch_size):
-                batch_vol = vol_path_list[i:i + batch_size]
-                batch_seg = seg_path_list[i:i + batch_size]
-                batch_vol, batch_seg = self.load_batch_img_array(batch_vol,batch_seg)
+                batch_vol_path = vol_path_list[i:i + batch_size]
+                batch_seg_path = seg_path_list[i:i + batch_size]
+                batch_vol_path, batch_seg_path = self.load_batch_img_array(batch_vol_path,batch_seg_path)
 
-                yield(batch_vol, batch_seg)
+                yield(batch_vol_path, batch_seg_path)

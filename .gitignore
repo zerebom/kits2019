@@ -5,3 +5,4 @@ data/*
 events.out.tfevents*
 *png
 *pyc
+parameter.txt
