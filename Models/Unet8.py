@@ -102,8 +102,8 @@ class UNet:
 
             # dec7 = Conv2D(output_channel_count,(1,1),activation='softmax',padding='same')(dec7)
             model = Model(inputs, dec8)
-            if not ON_WIN:
-                model = multi_gpu_model(model, gpus=2)
+            # if not ON_WIN:
+            #     model = multi_gpu_model(model, gpus=2)
 
             self.UNET = model
 

@@ -14,6 +14,7 @@ from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard, ModelC
 from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
 from Models.Unet8 import UNet
 from Utils.dice_coefficient import dice, dice_1, dice_2, dice_coef_loss, DiceLossByClass
+from tensorflow.python.keras.utils import Sequence, multi_gpu_model, plot_model
 
 import time
 
@@ -58,6 +59,7 @@ def train(parser):
     network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
 
     model = network.get_model()
+    model = multi_gpu_model(model, gpus=2)
     # model.compile(loss=dice_coef_loss,optimizer='adam', metrics=[dice])
     optimizer = tf.keras.optimizers.Adam(lr=parser.trainrate)
 
