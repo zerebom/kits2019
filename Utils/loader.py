@@ -21,7 +21,7 @@ class Loader:
         self.seg_path = json_path['dataset_path']['sagittal_label']
         self.d_num = parser.d_num
 
-        self.add_member('[6-8]')
+        self.add_member(parser.d_num)
         self.batch_size = parser.batch_size
         self.im_size = json_path['FIXED_SIZES'][self.d_num]
 

@@ -2,7 +2,7 @@ import subprocess
 
 
 
-for i in range(1, 11):
+for i in range(2,10):
     # cmd = f"python main.py -e 1 -d {i}"
     cmd = f"python main.py -d {i}"
     subprocess.call(cmd.split())

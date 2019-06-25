@@ -15,6 +15,7 @@
             256,
             256,
             128
-        ]
+        ],
+        "weight_save_dir":"./Result/Trained_weights/"
 
 }

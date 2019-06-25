@@ -10,9 +10,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tensorflow.python import keras
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard
+from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
-from Models.Unet import UNet
+from Models.Unet8 import UNet
+from Utils.dice_coefficient import dice, dice_1, dice_2, dice_coef_loss, DiceLossByClass
+
 import time
 
 from tensorflow.python.keras.layers import Input
@@ -30,107 +32,16 @@ from keras.layers.core import Lambda
 
 SAVE_BATCH_SIZE = 2
 WORKERS = 2
-gpu_count=2
-
-class DiceLossByClass():
-    def __init__(self, input_shape, class_num):
-        self.__input_h = input_shape
-        self.__input_w = input_shape
-        self.__class_num = class_num
-
-    def dice_coef(self, y_true, y_pred):
-        y_true = K.flatten(y_true)
-        y_pred = K.flatten(y_pred)
-        intersection = K.sum(y_true * y_pred)
-        denominator = K.sum(y_true) + K.sum(y_pred)
-        if denominator == 0:
-            return 1
-        if intersection == 0:
-            return 1 / (denominator + 1)
-        return (2.0 * intersection) / denominator
-        # return (2.0 * intersection + 1) / (K.sum(y_true) + K.sum(y_pred) + 1)
-
-    def dice_1(self, y_true, y_pred):
-        # (N, h, w, ch)
-        y_true_res = tf.reshape(y_true, (-1, self.__input_h, self.__input_w, self.__class_num))
-        y_pred_res = tf.reshape(y_pred, (-1, self.__input_h, self.__input_w, self.__class_num))
-
-        y_trues = K.get_value(y_true_res[:,:,:,1])
-        y_preds = K.get_value(y_pred_res[:, :, :, 1])
-
-        return self.dice_coef(y_trues, y_preds)
-
-    def dice_2(self, y_true, y_pred):
-        y_true_res = tf.reshape(y_true, (-1, self.__input_h, self.__input_w, self.__class_num))
-        y_pred_res = tf.reshape(y_pred, (-1, self.__input_h, self.__input_w, self.__class_num))
-
-        y_trues = K.get_value(y_true_res[:,:,:, 2])
-        y_preds = K.get_value(y_pred_res[:,:,:, 2])
-
-        return self.dice_coef(y_trues, y_preds)
-
-    def dice_coef_loss(self, y_true, y_pred):
-        # (N, h, w, ch)
-        y_true_res = tf.reshape(y_true, (-1, self.__input_h, self.__input_w, self.__class_num))
-        y_pred_res = tf.reshape(y_pred, (-1, self.__input_h, self.__input_w, self.__class_num))
-        # チャンネルごとのリストになる？
-        y_trues = tf.unstack(y_true_res, axis=3)
-        y_preds = tf.unstack(y_pred_res, axis=3)
-
-        losses = []
-        for y_t, y_p in zip(y_trues, y_preds):
-            losses.append((1 - self.dice_coef(y_t, y_p)) * 3)
-        return tf.reduce_sum(tf.stack(losses))
-        # return 1 - self.dice_coef(y_true, y_pred)
-
-
-def dice(y_true, y_pred):
-    eps = K.constant(1e-6)
-    truelabels = tf.argmax(y_true, axis=-1, output_type=tf.int32)
-    predictions = tf.argmax(y_pred, axis=-1, output_type=tf.int32)
-    # cast->型変換,minimum2つのテンソルの要素ごとの最小値,equal->boolでかえってくる
-    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
-    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
-    dice = 2. * intersection / (union + eps)
-    return dice
-
-
-def dice_1(y_true, y_pred):
-    K = tf.keras.backend
-
-    eps = K.constant(1e-6)
-
-    truelabels = K.cast(y_true[:, :, :, 1], tf.int32)
-    predictions = K.cast(y_pred[:, :, :, 1], tf.int32)
-
-    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
-    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
-    dice_1 = 2 * intersection / (union + eps)
-
-    return dice_1
-
-
-def dice_2(y_true, y_pred):
-    K = tf.keras.backend
-
-    eps = K.constant(1e-6)
-    truelabels = K.cast(y_true[:, :, :, 2], tf.int32)
-    predictions = K.cast(y_pred[:, :, :, 2], tf.int32)
-
-    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
-    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
-    dice_2 = 2 * intersection / (union + eps)
-
-    return dice_2
-
-def dice_coef_loss(y_true, y_pred):
-    return 1.0 - dice(y_true, y_pred)
-
+gpu_count = 2
 
 def train(parser):
     config = json.load(open('./setting.json'))
     d_num = parser.d_num
     im_size = config['FIXED_SIZES'][d_num]
+    weight_save_dir = config['weight_save_dir']
+    weight_file = os.path.join(weight_save_dir, str(d_num), dt.today().strftime("%m%d") + '.h5')
+
+
 
     START_TIME = time.time()
     reporter = Reporter(parser=parser)
@@ -151,7 +62,7 @@ def train(parser):
     optimizer = tf.keras.optimizers.Adam(lr=parser.trainrate)
 
     model.compile(
-        loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice,dice_1,dice_2])
+        loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice, dice_1, dice_2])
 
     model.summary()
     # ---------------------------training----------------------------------
@@ -169,6 +80,8 @@ def train(parser):
 
     tb_cb = TensorBoard(log_dir=logdir, histogram_freq=0, write_graph=True, write_images=True)
     es_cb = EarlyStopping(monitor='val_loss', patience=parser.early_stopping, verbose=1, mode='auto')
+    # mc_cb = ModelCheckpoint(filepath=weight_file, monitor='val_loss', verbose=1, save_best_only=True,
+    #                         save_weights_only=False, mode='min', period=1)
 
     print("start training.")
     print(valid_steps)
@@ -177,8 +90,8 @@ def train(parser):
         generator=train_gen,
         steps_per_epoch=train_steps,
         epochs=epochs,
-        max_queue_size=32,
-        workers= 1 if ON_WIN else WORKERS*gpu_count,
+        max_queue_size=10 if ON_WIN else 32,
+        workers=1 if ON_WIN else WORKERS * gpu_count,
         use_multiprocessing=False,
         validation_steps=valid_steps,
         validation_data=valid_gen,
