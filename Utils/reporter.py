@@ -65,8 +65,7 @@ class Reporter:
         if len(history.history['val_loss']) >= 10:
             plt.xlim(10, len(history.history['val_loss']))
             plt.ylim(0, int(history.history['val_loss'][9] * 1.1))
-
-        plt.savefig(os.path.join(self.main_dir, title + '_remove_outlies_' + self.IMAGE_EXTENSION))
+            plt.savefig(os.path.join(self.main_dir, title + '_remove_outlies_' + self.IMAGE_EXTENSION))
 
         plt.figure()
         plt.plot(history.history['dice'], linewidth=1.5, marker='o')
@@ -75,7 +74,7 @@ class Reporter:
         plt.title('model dice')
         plt.xlabel('epoch')
         plt.ylabel('dice')
-        plt.legend(['dice', 'val_dice'], loc='upper right', fontsize=18)
+        plt.legend(['dice', 'val_dice'], loc='lower right', fontsize=18)
         plt.tight_layout()
         plt.savefig(os.path.join(self.main_dir, 'dice' + self.IMAGE_EXTENSION))
 

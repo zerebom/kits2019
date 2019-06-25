@@ -166,6 +166,7 @@ if __name__ == "__main__":
             clip_seg_itk = sitk.GetImageFromArray(clip_seg)
             clip_vol_itk = sitk.GetImageFromArray(clip_vol)
             
+            #くそおもい↓
             # plt.figure()
             # plt.imshow(clip_seg, cmap='Greys_r', origin='lower')
             # plt.savefig(seg_jpg_path)

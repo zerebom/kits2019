@@ -21,20 +21,24 @@ from datetime import datetime as dt
 from tensorflow import keras
 from Utils.reporter import Reporter
 from Utils.loader import Loader
+from Utils.status import ON_WIN
 
 import json
 import glob
-
+from keras.layers.core import Lambda
 
 
 SAVE_BATCH_SIZE = 2
-class DiceLossByClass():
-    def __init__(self,input_shape,class_num):
-        self.__input_h=input_shape
-        self.__input_w=input_shape
-        self.__class_num=class_num
+WORKERS = 2
+gpu_count=2
 
-    def dice_coef(self,y_true,y_pred):
+class DiceLossByClass():
+    def __init__(self, input_shape, class_num):
+        self.__input_h = input_shape
+        self.__input_w = input_shape
+        self.__class_num = class_num
+
+    def dice_coef(self, y_true, y_pred):
         y_true = K.flatten(y_true)
         y_pred = K.flatten(y_pred)
         intersection = K.sum(y_true * y_pred)
@@ -44,91 +48,93 @@ class DiceLossByClass():
         if intersection == 0:
             return 1 / (denominator + 1)
         return (2.0 * intersection) / denominator
-        #return (2.0 * intersection + 1) / (K.sum(y_true) + K.sum(y_pred) + 1)
+        # return (2.0 * intersection + 1) / (K.sum(y_true) + K.sum(y_pred) + 1)
 
+    def dice_1(self, y_true, y_pred):
+        # (N, h, w, ch)
+        y_true_res = tf.reshape(y_true, (-1, self.__input_h, self.__input_w, self.__class_num))
+        y_pred_res = tf.reshape(y_pred, (-1, self.__input_h, self.__input_w, self.__class_num))
+
+        y_trues = K.get_value(y_true_res[:,:,:,1])
+        y_preds = K.get_value(y_pred_res[:, :, :, 1])
+
+        return self.dice_coef(y_trues, y_preds)
+
+    def dice_2(self, y_true, y_pred):
+        y_true_res = tf.reshape(y_true, (-1, self.__input_h, self.__input_w, self.__class_num))
+        y_pred_res = tf.reshape(y_pred, (-1, self.__input_h, self.__input_w, self.__class_num))
+
+        y_trues = K.get_value(y_true_res[:,:,:, 2])
+        y_preds = K.get_value(y_pred_res[:,:,:, 2])
+
+        return self.dice_coef(y_trues, y_preds)
 
     def dice_coef_loss(self, y_true, y_pred):
         # (N, h, w, ch)
         y_true_res = tf.reshape(y_true, (-1, self.__input_h, self.__input_w, self.__class_num))
         y_pred_res = tf.reshape(y_pred, (-1, self.__input_h, self.__input_w, self.__class_num))
+        # チャンネルごとのリストになる？
         y_trues = tf.unstack(y_true_res, axis=3)
         y_preds = tf.unstack(y_pred_res, axis=3)
 
         losses = []
-
-        # dice0 = 1 - self.dice_coef(y_trues[0], y_preds[0]) * 3
-        # dice1 = 1 - self.dice_coef(y_trues[1], y_preds[1]) * 3
-        # dice2 = 1 - self.dice_coef(y_trues[2], y_preds[2]) * 3
-
-        
         for y_t, y_p in zip(y_trues, y_preds):
-            losses.append((1 - self.dice_coef(y_t, y_p))*3)
-        # return tf.reduce_sum(dice0), tf.reduce_sum(dice1), tf.reduce_sum(dice2)
-
-        # return tf.reduce_mean(tf.stack(losses))
+            losses.append((1 - self.dice_coef(y_t, y_p)) * 3)
         return tf.reduce_sum(tf.stack(losses))
-        #return 1 - self.dice_coef(y_true, y_pred)
+        # return 1 - self.dice_coef(y_true, y_pred)
 
 
 def dice(y_true, y_pred):
-
     eps = K.constant(1e-6)
     truelabels = tf.argmax(y_true, axis=-1, output_type=tf.int32)
     predictions = tf.argmax(y_pred, axis=-1, output_type=tf.int32)
-    #cast->型変換,minimum2つのテンソルの要素ごとの最小値,equal->boolでかえってくる
+    # cast->型変換,minimum2つのテンソルの要素ごとの最小値,equal->boolでかえってくる
     intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
     union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
     dice = 2. * intersection / (union + eps)
     return dice
 
 
-# def dice0(y_true, y_pred):
-#     y_pred = np.where(y_pred == 0, 1, y_pred)
-#     y_true = np.where(y_true == 0, 1, y_true)
-#     y_pred = np.where(y_pred != 1, 0, y_pred)
-#     y_true = np.where(y_true != 1, 0, y_true)
-    
-#     #1次元化
-#     y_true = K.flatten(y_true)
-#     y_pred = K.flatten(y_pred)
-#     intersection = K.sum(y_true * y_pred)
-#     return (2. * intersection + 1) / (K.sum(y_true) + K.sum(y_pred) + 1)
+def dice_1(y_true, y_pred):
+    K = tf.keras.backend
 
-# def dice1(y_true, y_pred):
-#     y_pred = np.where(y_pred != 1, 0, y_pred)
-#     y_true = np.where(y_true != 1, 0, y_true)
-#     #1次元化
-#     y_true = K.flatten(y_true)
-#     y_pred = K.flatten(y_pred)
-#     intersection = K.sum(y_true * y_pred)
-#     return (2. * intersection+1) / (K.sum(y_true) + K.sum(y_pred) + 1)
+    eps = K.constant(1e-6)
+
+    truelabels = K.cast(y_true[:, :, :, 1], tf.int32)
+    predictions = K.cast(y_pred[:, :, :, 1], tf.int32)
+
+    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
+    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
+    dice_1 = 2 * intersection / (union + eps)
+
+    return dice_1
 
 
-# def dice2(y_true, y_pred):
-#     y_pred = np.where(y_pred != 2, 0, y_pred)
-#     y_true = np.where(y_true != 2, 0, y_true)
-#     y_pred = np.where(y_pred == 2, 1, y_pred)
-#     y_true = np.where(y_true == 2, 1, y_true)
-    
-#     #1次元化
-#     y_true = K.flatten(y_true)
-#     y_pred = K.flatten(y_pred)
-#     intersection = K.sum(y_true * y_pred)
-#     return (2. * intersection + 1) / (K.sum(y_true) + K.sum(y_pred) + 1)
+def dice_2(y_true, y_pred):
+    K = tf.keras.backend
+
+    eps = K.constant(1e-6)
+    truelabels = K.cast(y_true[:, :, :, 2], tf.int32)
+    predictions = K.cast(y_pred[:, :, :, 2], tf.int32)
+
+    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
+    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
+    dice_2 = 2 * intersection / (union + eps)
+
+    return dice_2
 
 def dice_coef_loss(y_true, y_pred):
     return 1.0 - dice(y_true, y_pred)
 
-def train(parser):
 
+def train(parser):
     config = json.load(open('./setting.json'))
     d_num = parser.d_num
-    im_size = config['FIXED_SIZES'][d_num - 1]
+    im_size = config['FIXED_SIZES'][d_num]
 
-
-    START_TIME=time.time()
-    reporter=Reporter(parser=parser)
-    loader=Loader(parser=parser)
+    START_TIME = time.time()
+    reporter = Reporter(parser=parser)
+    loader = Loader(parser=parser)
 
     train_gen, valid_gen, test_gen = loader.return_gen()
     train_steps, valid_steps, test_steps = loader.return_step()
@@ -139,14 +145,14 @@ def train(parser):
     first_layer_filter_count = parser.filter
 
     network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
-    
+
     model = network.get_model()
     # model.compile(loss=dice_coef_loss,optimizer='adam', metrics=[dice])
     optimizer = tf.keras.optimizers.Adam(lr=parser.trainrate)
 
-    model.compile(loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice])
+    model.compile(
+        loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice,dice_1,dice_2])
 
-    
     model.summary()
     # ---------------------------training----------------------------------
 
@@ -160,7 +166,7 @@ def train(parser):
 
     logdir = os.path.join('./logs', dt.today().strftime("%Y%m%d_%H%M"))
     os.makedirs(logdir, exist_ok=True)
-    
+
     tb_cb = TensorBoard(log_dir=logdir, histogram_freq=0, write_graph=True, write_images=True)
     es_cb = EarlyStopping(monitor='val_loss', patience=parser.early_stopping, verbose=1, mode='auto')
 
@@ -170,13 +176,16 @@ def train(parser):
         generator=train_gen,
         steps_per_epoch=train_steps,
         epochs=epochs,
+        max_queue_size=16,
+        workers= 1 if ON_WIN else WORKERS*gpu_count,
+        use_multiprocessing=False if ON_WIN else True,
         validation_data=valid_gen,
         validation_steps=valid_steps,
         # use_multiprocessing=True,
         callbacks=[es_cb, tb_cb])
 
     print("finish training. And start making predict.")
-    
+
     # ---------------------------predict----------------------------------
 
     test_preds = model.predict_generator(test_gen, steps=test_steps, verbose=1)
@@ -185,8 +194,6 @@ def train(parser):
     reporter.add_log_documents(f'ELAPSED_TIME:{ELAPSED_TIME} [sec]')
 
     # ---------------------------report----------------------------------
-
-
 
     parser.save_logs = True
     if parser.save_logs:
@@ -197,7 +204,7 @@ def train(parser):
         reporter.generate_main_dir()
         reporter.plot_history(history)
         reporter.save_params(history)
-    
+
         train_gen, valid_gen, test_gen = loader.return_gen()
 
         for i in range(min(train_steps, SAVE_BATCH_SIZE)):
@@ -227,9 +234,9 @@ def get_parser():
     parser.add_argument('-e', '--epoch', type=int,
                         default=200, help='Number of epochs')
     parser.add_argument('-f', '--filter', type=int,
-                        default=48, help='Number of model first_filters')
+                        default=48 if ON_WIN else 64, help='Number of model first_filters')
     parser.add_argument('-b', '--batch_size', type=int,
-                        default=32, help='Batch size')
+                        default=32 if ON_WIN else 64, help='Batch size')
     parser.add_argument('-t', '--trainrate', type=float,
                         default=1e-3, help='Training rate')
     parser.add_argument('-es', '--early_stopping', type=int,
