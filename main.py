@@ -171,16 +171,17 @@ def train(parser):
     es_cb = EarlyStopping(monitor='val_loss', patience=parser.early_stopping, verbose=1, mode='auto')
 
     print("start training.")
+    print(valid_steps)
     # Pythonジェネレータ（またはSequenceのインスタンス）によりバッチ毎に生成されたデータでモデルを訓練します．
     history = model.fit_generator(
         generator=train_gen,
         steps_per_epoch=train_steps,
         epochs=epochs,
-        max_queue_size=16,
+        max_queue_size=32,
         workers= 1 if ON_WIN else WORKERS*gpu_count,
-        use_multiprocessing=False if ON_WIN else True,
-        validation_data=valid_gen,
+        use_multiprocessing=False,
         validation_steps=valid_steps,
+        validation_data=valid_gen,
         # use_multiprocessing=True,
         callbacks=[es_cb, tb_cb])
 
