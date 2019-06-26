@@ -102,14 +102,6 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
-
-
-
-
 for q in tqdm_notebook(range(210)):
     ## Read image
     seg = nib.load(os.path.join(r"C:\Users\higuchi\Desktop\kits19\data\case_00"+str(q).zfill(3),"segmentation.nii.gz"))

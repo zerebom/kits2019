@@ -14,18 +14,18 @@ from tensorflow.python.keras.utils import multi_gpu_model, plot_model
 
 
 class UNet:
-    def __init__(self, input_channel_count, output_channel_count, first_layer_filter_count,im_size, parser):
-        self.name = self.__class__.__name__.lower()
-        self.INPUT_IMAGE_SIZE = im_size
-        self.CONCATENATE_AXIS = -1
-        self.CONV_FILTER_SIZE = 4
-        self.CONV_STRIDE = 2
-        self.CONV_PADDING = (1, 1)
-        self.DECONV_FILTER_SIZE = 2
-        self.DECONV_STRIDE = 2
-        self.parser = parser
-        # (128 x 128 x input_channel_count)
-        with tf.device("/cpu:0"):
+    with tf.device("/cpu:0"):
+        def __init__(self, input_channel_count, output_channel_count, first_layer_filter_count,im_size, parser):
+            self.name = self.__class__.__name__.lower()
+            self.INPUT_IMAGE_SIZE = im_size
+            self.CONCATENATE_AXIS = -1
+            self.CONV_FILTER_SIZE = 4
+            self.CONV_STRIDE = 2
+            self.CONV_PADDING = (1, 1)
+            self.DECONV_FILTER_SIZE = 2
+            self.DECONV_STRIDE = 2
+            self.parser = parser
+            # (128 x 128 x input_channel_count)
             inputs = Input((self.INPUT_IMAGE_SIZE, self.INPUT_IMAGE_SIZE, input_channel_count))
 
             # エンコーダーの作成
@@ -95,12 +95,8 @@ class UNet:
                 activation='softmax',
                 strides=self.DECONV_STRIDE)(dec7)
 
-            # dec7 = Conv2D(output_channel_count,(1,1),activation='softmax',padding='same')(dec7)
             model=Model(inputs, dec7)
-        if not ON_WIN:
-            model = multi_gpu_model(model, gpus=2)
-
-        self.UNET = model
+            self.UNET = model
 
     def _add_encoding_layer(self, filter_count, sequence):
         new_sequence = LeakyReLU(0.2)(sequence)

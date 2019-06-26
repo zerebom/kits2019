@@ -180,8 +180,6 @@ if __name__ == "__main__":
             sitk.WriteImage(clip_seg_itk, seg_path, True)
             sitk.WriteImage(clip_vol_itk, vol_path, True)
 
-            # sitk.WriteImage(clip_seg, seg_jpg_path, True)
-            # sitk.WriteImage(clip_vol, vol_jpg_path, True)
 
             datalist = [seg_path, PADDING_SIZE, clip_seg_shape[0], clip_seg_shape[1],
                         slice_seg.shape[0], slice_seg.shape[1], area,

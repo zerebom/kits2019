@@ -1,6 +1,8 @@
 data/*
 ./logs/*
 ./Result/*
+Result/Trained_weights/
+
 *csv
 events.out.tfevents*
 *png

@@ -12,7 +12,9 @@ from tensorflow.python import keras
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
-from Models.Unet8 import UNet
+from Models.Unet8 import UNet as UNet8
+from Models.Unet import UNet 
+
 from Utils.dice_coefficient import dice, dice_1, dice_2, dice_coef_loss, DiceLossByClass
 from tensorflow.python.keras.utils import Sequence, multi_gpu_model, plot_model
 
@@ -40,7 +42,9 @@ def train(parser):
     d_num = parser.d_num
     im_size = config['FIXED_SIZES'][d_num]
     weight_save_dir = config['weight_save_dir']
-    weight_file = os.path.join(weight_save_dir, str(d_num), dt.today().strftime("%m%d") + '.h5')
+    weight_dir = os.path.join(weight_save_dir, str(d_num))
+    os.makedirs(weight_dir,exist_ok=True) 
+    weight_file=os.path.join(weight_dir,dt.today().strftime("%m%d")+'.h5')
 
 
 
@@ -56,7 +60,11 @@ def train(parser):
     output_channel_count = 3
     first_layer_filter_count = parser.filter
 
-    network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+    if im_size>128:
+        network = UNet8(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+    else:
+        network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+
 
     model = network.get_model()
     model = multi_gpu_model(model, gpus=2)
@@ -82,9 +90,9 @@ def train(parser):
 
     tb_cb = TensorBoard(log_dir=logdir, histogram_freq=0, write_graph=True, write_images=True)
     es_cb = EarlyStopping(monitor='val_loss', patience=parser.early_stopping, verbose=1, mode='auto')
-    # mc_cb = ModelCheckpoint(filepath=weight_file, monitor='val_loss', verbose=1, save_best_only=True,
-    #                         save_weights_only=False, mode='min', period=1)
-
+    mc_cb = ModelCheckpoint(filepath=weight_file, monitor='val_loss', verbose=1, save_best_only=True,
+                            save_weights_only=False, mode='min', period=1)
+    print('dnum is:',d_num)
     print("start training.")
     print(valid_steps)
     # Pythonジェネレータ（またはSequenceのインスタンス）によりバッチ毎に生成されたデータでモデルを訓練します．
@@ -98,7 +106,7 @@ def train(parser):
         validation_steps=valid_steps,
         validation_data=valid_gen,
         # use_multiprocessing=True,
-        callbacks=[es_cb, tb_cb])
+        callbacks=[es_cb, tb_cb,mc_cb])
 
     print("finish training. And start making predict.")
 
