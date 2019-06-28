@@ -1,7 +1,0 @@
-ELAPSED_TIME:69 [sec]
-Number of epochs:3
-Batch size:32
-Training rate:0.85
-Augmentation:False
-min_val_loss:22.50508088370164
-min_loss:3.965126197811863

@@ -62,9 +62,12 @@ if __name__ == "__main__":
             d_num_df=d_num_df[d_num_df['path'].str.contains(rf'\\case_00{str(cid).zfill(3)}\\')]
             for index,row in d_num_df.iterrows():
                 path=row.path
-                path=path.replace('label_sagittal2','image_sagittal2')
+                path=path.replace('label','image')
+
 
                 vol_img=load_vol(path)
+                vol_img = vol_img.reshape(1, vol_img.shape[0], vol_img.shape[1], 1)
+
                 seg_pred=model.predict(vol_img, batch_size=1)
                 seg_pred=np.argmax(seg_pred,axis=1)
 
