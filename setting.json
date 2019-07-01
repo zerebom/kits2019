@@ -1,21 +1,22 @@
 {
-        "dataset_path": {
-            "sagittal_image": "./data/image_sagittal2",
-            "sagittal_label": "./data/label_sagittal2"
-            
-        },
-        "FIXED_SIZES":[
-            128,
-            256,
-            256,
-            256,
-            128,
-            128,
-            256,
-            256,
-            256,
-            128
-        ],
-        "weight_save_dir":"./Result/Trained_weights/"
-
+    "dataset_path": {
+        "sagittal_image": "./data/image_sagittal2",
+        "sagittal_label": "./data/label_sagittal2",
+        "image": "./data/image",
+        "label": "./data/label"
+    },
+    "FIXED_SIZES": [
+        128,
+        256,
+        256,
+        256,
+        128,
+        128,
+        256,
+        256,
+        256,
+        128
+    ],
+    "weight_save_dir": "./Result/Trained_weights/",
+    "slice_csv": "./0701max_slice2.csv"
 }
