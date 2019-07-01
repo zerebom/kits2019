@@ -177,6 +177,7 @@ if __name__ == "__main__":
             # plt.savefig(vol_jpg_path)
             # plt.close()
 
+
             sitk.WriteImage(clip_seg_itk, seg_path, True)
             sitk.WriteImage(clip_vol_itk, vol_path, True)
 
