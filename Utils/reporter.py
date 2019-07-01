@@ -116,18 +116,20 @@ class Reporter:
             teach = np.argmax(batch_teach[i, :, :, :],axis=2)
 
             seg=np.hstack((pred,teach))
-            # seg = np.where(seg == 1, 128, seg)
-            # seg = np.where(seg == 2, 255, seg)
+            seg = np.where(seg == 1, 128, seg)
+            seg = np.where(seg == 2, 255, seg)
             #3次元に展開
-            seg=seg[:,:,np.newaxis]
+            # seg=seg[:,:,np.newaxis]
             seg_im = seg.astype(np.uint8)
+            seg_im=Image.fromarray(seg_im,mode='L')
+
             
             vol =batch_input[i, :, :, :]
             vol=255*vol/(np.max(vol)-np.min(vol))
             vol_im=vol.astype(np.uint8)
             
             array_to_img(vol_im).save(os.path.join(self.main_dir,save_folder,f'input_{self.parser.batch_size*batch_num+i}.png'))
-            array_to_img(seg_im).save(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
+            seg_im.save(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
 
 
             # plt.figure()

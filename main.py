@@ -60,7 +60,7 @@ def train(parser):
     output_channel_count = 3
     first_layer_filter_count = parser.filter
 
-    if im_size>128:
+    if parser.eito:
         network = UNet8(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
     else:
         network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
@@ -170,12 +170,16 @@ def get_parser():
     parser.add_argument('-i', '--input_channel', type=int,
                         default=1, help='input_channel')
     parser.add_argument('-d', '--d_num', type=int,
-                        default=2, help='directory_number')
+                        default=3, help='directory_number')
 
     parser.add_argument('-a', '--augmentation',
                         action='store_true', help='Number of epochs')
     parser.add_argument('-s', '--save_logs',
                         action='store_true', help='save or not logs')
+    
+    parser.add_argument('-ei', '--eito',
+                        action='store_true', help='Unet8 or Unet')
+
 
     return parser
 

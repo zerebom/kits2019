@@ -28,13 +28,13 @@ class Loader:
         self.im_size =256
         
         #[0]->前半部分,[1]->真ん中,[2]->終わり
-        self.train_vol_list = self.get_list(0, 150, 'image')[self.d_num]
-        self.valid_vol_list=self.get_list(150,180,'image')[self.d_num]
-        self.test_vol_list=self.get_list(180,203,'image')[self.d_num]
+        self.train_vol_list = self.get_list(0, 150, 'image')[self.d_num-1]
+        self.valid_vol_list=self.get_list(150,180,'image')[self.d_num-1]
+        self.test_vol_list=self.get_list(180,203,'image')[self.d_num-1]
         
-        self.train_seg_list=self.get_list(0,150,'label')[self.d_num]
-        self.valid_seg_list=self.get_list(150,180,'label')[self.d_num]
-        self.test_seg_list=self.get_list(180,203,'label')[self.d_num]
+        self.train_seg_list=self.get_list(0,150,'label')[self.d_num-1]
+        self.valid_seg_list=self.get_list(150,180,'label')[self.d_num-1]
+        self.test_seg_list=self.get_list(180,203,'label')[self.d_num-1]
 
 
         
