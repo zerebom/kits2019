@@ -116,8 +116,8 @@ class Reporter:
             teach = np.argmax(batch_teach[i, :, :, :],axis=2)
 
             seg=np.hstack((pred,teach))
-            seg = np.where(seg == 1, 128, seg)
-            seg = np.where(seg == 2, 255, seg)
+            # seg = np.where(seg == 1, 128, seg)
+            # seg = np.where(seg == 2, 255, seg)
             #3次元に展開
             seg=seg[:,:,np.newaxis]
             seg_im = seg.astype(np.uint8)

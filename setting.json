@@ -18,5 +18,5 @@
         128
     ],
     "weight_save_dir": "./Result/Trained_weights/",
-    "slice_csv": "./0701max_slice2.csv"
+    "slice_csv": "./0701max_slice.csv"
 }

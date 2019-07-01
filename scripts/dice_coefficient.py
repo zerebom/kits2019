@@ -80,13 +80,29 @@ def dice(y_true, y_pred):
     return dice
 
 
+# def dice(y_true, y_pred):
+#     eps = K.constant(1e-6)
+#     truelabels = tf.argmax(y_true, axis=-1, output_type=tf.int32)
+#     predictions = tf.argmax(y_pred, axis=-1, output_type=tf.int32)
+    
+#     # cast->型変換,minimum2つのテンソルの要素ごとの最小値,equal->boolでかえってくる
+#     intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
+#     union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
+#     dice = 2. * intersection / (union + eps)
+#     return dice
+
 def dice_1(y_true, y_pred):
     K = tf.keras.backend
 
     eps = K.constant(1e-6)
 
-    truelabels = K.cast(y_true[:, :, :, 1], tf.int32)
-    predictions = K.cast(y_pred[:, :, :, 1], tf.int32)
+    truelabels = tf.argmax(y_true, axis=-1, output_type=tf.int32)
+    predictions = tf.argmax(y_pred, axis=-1, output_type=tf.int32)
+
+    # truelabels = K.cast(y_true[:, :, :, 1], tf.int32)
+    # predictions = K.cast(y_pred[:, :, :, 1], tf.int32)
+    truelabels = tf.where(tf.equal(truelabels, 1), truelabels, 0)
+    predictions = tf.where(tf.equal(predictions, 1), predictions, 0)
 
     intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
     union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
@@ -99,8 +115,15 @@ def dice_2(y_true, y_pred):
     K = tf.keras.backend
 
     eps = K.constant(1e-6)
-    truelabels = K.cast(y_true[:, :, :, 2], tf.int32)
-    predictions = K.cast(y_pred[:, :, :, 2], tf.int32)
+
+    truelabels = tf.argmax(y_true, axis=-1, output_type=tf.int32)
+    predictions = tf.argmax(y_pred, axis=-1, output_type=tf.int32)
+    
+    # truelabels = K.cast(y_true[:, :, :, 2], tf.int32)
+    # predictions = K.cast(y_pred[:, :, :, 2], tf.int32)
+    truelabels = tf.where(tf.equal(truelabels, 2), truelabels,0)
+    predictions = tf.where(tf.equal(predictions, 2), predictions, 0)
+    
 
     intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
     union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)

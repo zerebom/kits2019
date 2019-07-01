@@ -25,7 +25,7 @@ import tensorflow as tf
 from datetime import datetime as dt
 from tensorflow import keras
 from Utils.reporter import Reporter
-from Utils.loader import Loader
+from Utils.loader2 import Loader
 from Utils.status import ON_WIN
 
 import json
@@ -40,7 +40,7 @@ gpu_count = 2
 def train(parser):
     config = json.load(open('./setting.json'))
     d_num = parser.d_num
-    im_size = config['FIXED_SIZES'][d_num]
+    im_size = 256
     weight_save_dir = config['weight_save_dir']
     weight_dir = os.path.join(weight_save_dir, str(d_num))
     os.makedirs(weight_dir,exist_ok=True) 
@@ -67,7 +67,9 @@ def train(parser):
 
 
     model = network.get_model()
-    model = multi_gpu_model(model, gpus=2)
+    if not ON_WIN:
+        model = multi_gpu_model(model, gpus=2)
+    
     # model.compile(loss=dice_coef_loss,optimizer='adam', metrics=[dice])
     optimizer = tf.keras.optimizers.Adam(lr=parser.trainrate)
 
@@ -164,11 +166,11 @@ def get_parser():
     parser.add_argument('-t', '--trainrate', type=float,
                         default=1e-3, help='Training rate')
     parser.add_argument('-es', '--early_stopping', type=int,
-                        default=10, help='early_stopping patience')
+                        default=5, help='early_stopping patience')
     parser.add_argument('-i', '--input_channel', type=int,
                         default=1, help='input_channel')
     parser.add_argument('-d', '--d_num', type=int,
-                        default=1, help='directory_number')
+                        default=2, help='directory_number')
 
     parser.add_argument('-a', '--augmentation',
                         action='store_true', help='Number of epochs')

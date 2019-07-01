@@ -9,8 +9,8 @@ import random
 import SimpleITK as sitk
 import cv2
 from keras.utils import np_utils
-
-
+import pandas as pd
+import re
 config = json.load(open('./setting.json'))
 D_num = 1
 
@@ -24,18 +24,17 @@ class Loader:
         self.seg_path = json_path['dataset_path']['label']
         self.d_num = parser.d_num
         self.df=pd.read_csv(json_path['slice_csv'],header=0,index_col=0)
-        self.add_member(parser.d_num)
         self.batch_size = parser.batch_size
-        self.im_size = json_path['FIXED_SIZES'][self.d_num]
+        self.im_size =256
         
         #[0]->前半部分,[1]->真ん中,[2]->終わり
-        self.train_vol_list=get_list(0,150,'image')[0]
-        self.valid_vol_list=get_list(150,180,'image')[0]
-        self.test_vol_list=get_list(180,203,'image')[0]
+        self.train_vol_list = self.get_list(0, 150, 'image')[self.d_num]
+        self.valid_vol_list=self.get_list(150,180,'image')[self.d_num]
+        self.test_vol_list=self.get_list(180,203,'image')[self.d_num]
         
-        self.train_seg_list=get_list(0,150,'label')[0]
-        self.valid_seg_list=get_list(150,180,'label')[0]
-        self.test_seg_list=get_list(180,203,'label')[0]
+        self.train_seg_list=self.get_list(0,150,'label')[self.d_num]
+        self.valid_seg_list=self.get_list(150,180,'label')[self.d_num]
+        self.test_seg_list=self.get_list(180,203,'label')[self.d_num]
 
 
         
@@ -46,9 +45,14 @@ class Loader:
         st,en,患者idの始まりと終わり
         '''
         # sep_df=self.df['index'][:150] if d_num==0 else self.df['index'][150:180] if d_num==1 self.df['index'][180:]
-        for cid in self.df['index'][st:en]:
-            f_list=[p for p in glob.glob(f'../data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'front'),p)]
-            b_list=[p for p in glob.glob(f'../data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'back'),p)]  
+        list1, list2, list3=[],[],[]
+        for i,cid in enumerate(self.df['index'][st:en]):
+            if (self.df.at[i, 'fixed_area1'] < 10000) and (self.df.at[i, 'fixed_area1'] > 4000):
+                f_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'front'),p)]
+            
+            if (self.df.at[i,'fixed_area2'] < 10000 and self.df.at[i,'fixed_area2'] > 4000):
+                b_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'back'),p)]  
+            
             lf,lb=len(f_list),len(b_list)
             
             f_list1,f_list2,f_list3=f_list[:lf//3],f_list[lf//3:2*lf//3],f_list[2*lf//3:]
@@ -58,7 +62,7 @@ class Loader:
             list2+=f_list2+b_list2
             list3+=f_list3+b_list3
 
-            return list1,list2,list3
+        return list1,list2,list3
         
 
 
@@ -136,43 +140,3 @@ class Loader:
 
 
 
-
-
-d_num=3
-%%time
-for d in range(1,d_num+1):
-    for cid in new_df['index']:
-        front1=int(new_df['front'])//d_num
-        back1=int(new_df['front'])//d_num
-        
-        for i in range(front1):
-            a=[p for p in glob.glob(f'../data/image/case_00{str(cid).zfill(3)}/*') if re.search((f'front_{str(i).zfill(3)}'),p)]
-        
-        for i in range(back1):
-            a=[p for p in glob.glob(f'../data/image/case_00{str(cid).zfill(3)}/*') if re.search((f'back_{str(i).zfill(3)}'),p)]
-            
-        
-        for i in range(front1,front1*2):
-            a=[p for p in glob.glob(f'../data/image/case_00{str(cid).zfill(3)}/*') if re.search((f'front_{str(i).zfill(3)}'),p)]
-        
-        for i in range(back1,back1*2):
-            a=[p for p in glob.glob(f'../data/image/case_00{str(cid).zfill(3)}/*') if re.search((f'back_{str(i).zfill(3)}'),p)]
-
-        
-        for i in range(front1*2,int(new_df['front'])+1):
-            a=[p for p in glob.glob(f'../data/image/case_00{str(cid).zfill(3)}/*') if re.search((f'front_{str(i).zfill(3)}'),p)]
-        
-        for i in range(back1*2,int(new_df['back'])+1):
-            a=[p for p in glob.glob(f'../data/image/case_00{str(cid).zfill(3)}/*') if re.search((f'back_{str(i).zfill(3)}'),p)]
-        
-
-
-
-
-
-        
-    
-    
-    list1,list2,list3=[],[],[]
-for cid in new_df['index'][:140]:
-    
