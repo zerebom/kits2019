@@ -132,3 +132,12 @@ class Reporter:
             seg_im.save(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
 
 
+            # plt.figure()
+            # plt.imshow(seg, cmap='Greys_r', origin='lower')
+            # plt.savefig(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
+            
+            # plt.figure()
+            # plt.imshow(vol, cmap='Greys_r', origin='lower')
+            # plt.savefig(os.path.join(self.main_dir, save_folder, f'input_{self.parser.batch_size*batch_num+i}.png'))
+
+
