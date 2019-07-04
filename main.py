@@ -148,7 +148,6 @@ def train(parser):
             batch_preds = model.predict(batch_input)
             reporter.plot_predict(batch_input, batch_preds, batch_teach, 'test', batch_num=i)
 
-
 def get_parser():
     parser = argparse.ArgumentParser(
         prog='generate parallax image using U-Net',
