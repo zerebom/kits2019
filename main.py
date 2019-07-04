@@ -60,10 +60,9 @@ def train(parser):
     output_channel_count = 3
     first_layer_filter_count = parser.filter
 
-    if im_size>128:
-        network = UNet8(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
-    else:
-        network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+    # if im_size>128:
+        # network = UNet8(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+    network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
 
 
     model = network.get_model()
@@ -73,8 +72,7 @@ def train(parser):
     # model.compile(loss=dice_coef_loss,optimizer='adam', metrics=[dice])
     optimizer = tf.keras.optimizers.Adam(lr=parser.trainrate)
 
-    model.compile(
-        loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice, dice_1, dice_2])
+    model.compile(loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice, dice_1, dice_2])
 
     model.summary()
     # ---------------------------training----------------------------------
@@ -147,7 +145,6 @@ def train(parser):
             batch_input, batch_teach = next(test_gen)
             batch_preds = model.predict(batch_input)
             reporter.plot_predict(batch_input, batch_preds, batch_teach, 'test', batch_num=i)
-
 
 def get_parser():
     parser = argparse.ArgumentParser(
