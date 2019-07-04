@@ -73,8 +73,8 @@ def train(parser):
     # model.compile(loss=dice_coef_loss,optimizer='adam', metrics=[dice])
     optimizer = tf.keras.optimizers.Adam(lr=parser.trainrate)
 
-    model.compile(
-        loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice, dice_1, dice_2])
+    # model.compile(loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice, dice_1, dice_2])
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=[dice, dice_1, dice_2])
 
     model.summary()
     # ---------------------------training----------------------------------
