@@ -12,7 +12,7 @@ from tensorflow.python import keras
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
-from Models.Unet8 import UNet as UNet8
+from Models.Unet8 import UNet8
 from Models.Unet import UNet 
 
 from Utils.dice_coefficient import dice, dice_1, dice_2, dice_coef_loss, DiceLossByClass
@@ -179,6 +179,9 @@ def get_parser():
     
     parser.add_argument('-ei', '--eito',
                         action='store_true', help='Unet8 or Unet')
+    parser.add_argument('-as', '--select_area_size',
+                        action='store_true', help='If true. eliminate big kidney')
+                     
 
 
     return parser

@@ -13,7 +13,7 @@ from Utils.status import ON_WIN
 from keras.utils import Sequence, multi_gpu_model, plot_model
 
 
-class UNet:
+class UNet8:
     with tf.device("/cpu:0"):
         def __init__(self, input_channel_count, output_channel_count, first_layer_filter_count, im_size, parser):
             self.name = self.__class__.__name__.lower()
@@ -104,7 +104,7 @@ class UNet:
             # if not ON_WIN:
             #     model = multi_gpu_model(model, gpus=2)
 
-            self.UNET = model
+            self.UNET8 = model
 
     def _add_encoding_layer(self, filter_count, sequence):
         new_sequence = LeakyReLU(0.2)(sequence)
@@ -124,7 +124,7 @@ class UNet:
         return new_sequence
 
     def get_model(self):
-        return self.UNET
+        return self.UNET8
 
     def get_name(self):
         return self.name

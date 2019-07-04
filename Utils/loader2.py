@@ -47,11 +47,20 @@ class Loader:
         # sep_df=self.df['index'][:150] if d_num==0 else self.df['index'][150:180] if d_num==1 self.df['index'][180:]
         list1, list2, list3=[],[],[]
         for i,cid in enumerate(self.df['index'][st:en]):
-            if (self.df.at[i, 'fixed_area1'] < 10000) and (self.df.at[i, 'fixed_area1'] > 4000):
-                f_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'front'),p)]
-            
-            if (self.df.at[i,'fixed_area2'] < 10000 and self.df.at[i,'fixed_area2'] > 4000):
+            if parser.select_area_size:
+                if (self.df.at[i, 'fixed_area1'] < 10000) and (self.df.at[i, 'fixed_area1'] > 4000):
+                    f_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'front'),p)]
+                if (self.df.at[i,'fixed_area2'] < 10000 and self.df.at[i,'fixed_area2'] > 4000):
+                    b_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'back'),p)]  
+
+            else:                
                 b_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'back'),p)]  
+                f_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'front'),p)]
+
+            b_list=b_list.sort()    
+            f_list=f_list.sort()    
+
+
             
             lf,lb=len(f_list),len(b_list)
             
