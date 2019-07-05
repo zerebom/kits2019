@@ -137,7 +137,7 @@ class Reporter:
 
     def output_predict(self,batch_preds,batch_output_paths,suffix):
         for pred,path in zip(batch_preds,batch_output_paths):
-            path=re.sub('preds',f'preds/{dt.today().strftime("%m%d")}_{suffix}',path)
+            path=re.sub('/preds',f'/preds/{dt.today().strftime("%m%d")}_{suffix}',path)
             folder,name=os.path.split(path)
             os.makedirs(folder,exist_ok=True)
             

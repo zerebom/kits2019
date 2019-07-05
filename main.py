@@ -14,12 +14,9 @@ from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard, ModelC
 from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
 from Models.Unet8 import UNet8
 from Models.Unet import UNet 
-
 from Utils.dice_coefficient import dice, dice_1, dice_2, dice_coef_loss, DiceLossByClass
 from tensorflow.python.keras.utils import Sequence, multi_gpu_model, plot_model
-
 import time
-
 from tensorflow.python.keras.layers import Input
 import tensorflow as tf
 from datetime import datetime as dt
@@ -27,7 +24,6 @@ from tensorflow import keras
 from Utils.reporter import Reporter
 from Utils.loader2 import Loader
 from Utils.status import ON_WIN
-
 import json
 import glob
 from keras.layers.core import Lambda
