@@ -5,6 +5,9 @@ import os
 from statistics import mean, median, variance, stdev
 import matplotlib.pyplot as plt
 from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
+import re
+import SimpleITK as sitk
+from datetime import datetime as dt
 
 
 class Reporter:
@@ -92,6 +95,7 @@ class Reporter:
         self.parameters.append("Augmentation:" + str(self.parser.augmentation))
         self.parameters.append("min_val_loss:" + str(min(history.history['val_loss'])))
         self.parameters.append("min_loss:" + str(min(history.history['loss'])))
+        if self.parser.select_area_size:self.parameter.append("select_area_size:True")
 
         # self.parameters.append("L2 regularization:" + str(parser.l2reg))
         output = "\n".join(self.parameters)
@@ -131,13 +135,15 @@ class Reporter:
             array_to_img(vol_im).save(os.path.join(self.main_dir,save_folder,f'input_{self.parser.batch_size*batch_num+i}.png'))
             seg_im.save(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
 
-
-            # plt.figure()
-            # plt.imshow(seg, cmap='Greys_r', origin='lower')
-            # plt.savefig(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
+    def output_predict(self,batch_preds,batch_output_paths,suffix):
+        for pred,path in zip(batch_preds,batch_output_paths):
+            path=re.sub('preds',f'preds/{dt.today().strftime("%m%d")}_{suffix}',path)
+            folder,name=os.path.split(path)
+            os.makedirs(folder,exist_ok=True)
             
-            # plt.figure()
-            # plt.imshow(vol, cmap='Greys_r', origin='lower')
-            # plt.savefig(os.path.join(self.main_dir, save_folder, f'input_{self.parser.batch_size*batch_num+i}.png'))
+            pred_im=sitk.GetImageFromArray(pred)
+            sitk.WriteImage(pred_im,path,True)
+
+
 
 

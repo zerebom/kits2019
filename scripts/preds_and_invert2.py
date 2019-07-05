@@ -51,6 +51,7 @@ if __name__ == "__main__":
                                 'dice_1': dice_1,
                                 'dice_2': dice_2,
                             })
+
             for cid in range(180, 210):
                 df = df.loc[df['index']==cid,:]
                 for index, row in df.iterrows():
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 
                     filename = re.sub('lable', '', filename)
                     filename = re.sub('.mha', '', filename)
-
+                    
                     save_path = os.path.join(dirname, filename.zfill(3) + '.mha')
 
                     raw_seg = sitk.GetImageFromArray(raw_seg)

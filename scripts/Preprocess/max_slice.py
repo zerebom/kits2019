@@ -208,7 +208,6 @@ if __name__ == "__main__":
             sitk.WriteImage(vol, image_path, True)
 
 
-
         for i, idx in enumerate(reversed(slice2)):
             slice_seg = raw_seg[:, :, idx]
             slice_vol = raw_vol[:, :, idx]

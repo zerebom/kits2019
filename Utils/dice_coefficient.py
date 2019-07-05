@@ -111,3 +111,17 @@ def dice_2(y_true, y_pred):
 
 def dice_coef_loss(y_true, y_pred):
     return 1.0 - dice(y_true, y_pred)
+
+
+def penalty_categorical(y_true,y_pred):
+    array_tf = tf.convert_to_tensor(y_true,dtype=tf.float32)
+    pred_tf = tf.convert_to_tensor(y_pred,dtype=tf.float32)
+
+    epsilon = K.epsilon()
+
+    result = tf.reduce_sum(array_tf,[0,1,2,3])
+
+    result_pow = tf.pow(result,1.0/3.0)
+    weight_y = result_pow / tf.reduce_sum(result_pow)
+
+    return (-1) * tf.reduce_sum( 1 / (weight_y + epsilon) * array_tf * tf.log(pred_tf + epsilon),axis=-1)

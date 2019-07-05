@@ -15,8 +15,6 @@ config = json.load(open('./setting.json'))
 D_num = 1
 
 
-
-
 class Loader:
     def __init__(self, json_path=config, parser=None):
         self.parser = parser
@@ -47,7 +45,7 @@ class Loader:
         # sep_df=self.df['index'][:150] if d_num==0 else self.df['index'][150:180] if d_num==1 self.df['index'][180:]
         list1, list2, list3=[],[],[]
         for i,cid in enumerate(self.df['index'][st:en]):
-            if parser.select_area_size:
+            if self.parser.select_area_size:
                 if (self.df.at[i, 'fixed_area1'] < 10000) and (self.df.at[i, 'fixed_area1'] > 4000):
                     f_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'front'),p)]
                 if (self.df.at[i,'fixed_area2'] < 10000 and self.df.at[i,'fixed_area2'] > 4000):
@@ -57,10 +55,8 @@ class Loader:
                 b_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'back'),p)]  
                 f_list=[p for p in glob.glob(f'./data/{dtype}/case_00{str(cid).zfill(3)}/*') if re.search((f'front'),p)]
 
-            b_list=b_list.sort()    
-            f_list=f_list.sort()    
-
-
+            b_list.sort()    
+            f_list.sort() 
             
             lf,lb=len(f_list),len(b_list)
             
@@ -75,18 +71,22 @@ class Loader:
         
 
 
-    def return_gen(self):
-        # self.imgs_length = len(self.sagittal_image)
-        # self.train_list, self.valid_list, self.test_list = self.train_valid_test_splits(self.imgs_length)
-
+    def return_gen(self,return_path=False):
         self.train_steps = math.ceil(len(self.train_seg_list) / self.batch_size)
         self.valid_steps = math.ceil(len(self.valid_seg_list) / self.batch_size)
         self.test_steps = math.ceil(len(self.test_seg_list) / self.batch_size)
 
         self.train_gen = self.generator_with_preprocessing(self.train_vol_list, self.train_seg_list, self.batch_size)
-        self.valid_gen = self.generator_with_preprocessing(self.valid_vol_list, self.valid_seg_list, self.batch_size)
+        self.valid_gen= self.generator_with_preprocessing(self.valid_vol_list, self.valid_seg_list, self.batch_size)
         self.test_gen = self.generator_with_preprocessing(self.test_vol_list, self.test_seg_list, self.batch_size)
-        return self.train_gen, self.valid_gen, self.test_gen
+        # self.train_gen_path = self.generator_paths(self.train_vol_list, self.batch_size)
+        # self.valid_gen_path=self.generator_paths(self.valid_vol_list, self.batch_size)
+        self.output_gen_path=self.generator_paths(self.test_vol_list, self.batch_size)
+
+        if return_path:
+            return self.train_gen, self.valid_gen, self.test_gen,self.output_gen_path
+        else:    
+            return self.train_gen, self.valid_gen, self.test_gen
 
     def return_step(self):
         return self.train_steps, self.valid_steps, self.test_steps
@@ -130,9 +130,18 @@ class Loader:
             for i in range(0, len(vol_path_list), batch_size):
                 batch_vol_path = vol_path_list[i:i + batch_size]
                 batch_seg_path = seg_path_list[i:i + batch_size]
-                batch_vol_path, batch_seg_path = self.load_batch_img_array(batch_vol_path, batch_seg_path)
+                batch_vol, batch_seg = self.load_batch_img_array(batch_vol_path, batch_seg_path)
+                data=(batch_vol,batch_seg)
+                
+                yield data
 
-                yield(batch_vol_path, batch_seg_path)
+    def generator_paths(self,vol_path_list,batch_size):
+        while True:
+            for i in range(0, len(vol_path_list), batch_size):
+                batch_vol_path = vol_path_list[i:i + batch_size]
+                batch_output_paths=[re.sub('image','preds',path) for path in batch_vol_path]
+                yield batch_output_paths
+
 
 
 
