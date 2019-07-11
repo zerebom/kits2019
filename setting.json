@@ -3,7 +3,9 @@
         "sagittal_image": "./data/image_sagittal2",
         "sagittal_label": "./data/label_sagittal2",
         "image": "./data/image",
-        "label": "./data/label"
+        "label": "./data/label",
+        "max_sagittal":"./data/input/max/"
+
     },
     "FIXED_SIZES": [
         128,

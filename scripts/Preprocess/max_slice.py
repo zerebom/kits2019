@@ -278,3 +278,16 @@ if __name__ == "__main__":
     main(parser)
 
 
+def make_batch(whole,batch,channel=3):
+    output=[]
+    for i in range(len(batch)):
+        mini=[0]*channel
+        for j,k in zip(range(channel),range(-(channel//2),(channel//2)+1)):
+            if 0<= i+k <len(batch):
+                mini[j]=whole[whole.index(batch[i+k])]
+            else:
+                mini[j]=whole[whole.index(batch[i])]
+        output.append(mini)
+    return(output)
+
+make_batch(whole,batch,channel=5)
