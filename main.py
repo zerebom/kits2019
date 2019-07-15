@@ -1,5 +1,5 @@
 import argparse
-import keras.callbacks
+# import keras.callbacks
 from PIL import Image, ImageOps
 # from IPython.display import display_png
 import os
@@ -22,11 +22,12 @@ import tensorflow as tf
 from datetime import datetime as dt
 from tensorflow import keras
 from Utils.reporter import Reporter
-from Utils.loader2 import Loader
+from Utils.loader3 import Loader
 from Utils.status import ON_WIN
 import json
 import glob
 from keras.layers.core import Lambda
+from tensorflow.python.keras.models import load_model
 
 
 SAVE_BATCH_SIZE = 2
@@ -40,7 +41,7 @@ def train(parser):
     weight_save_dir = config['weight_save_dir']
     weight_dir = os.path.join(weight_save_dir, str(d_num))
     os.makedirs(weight_dir,exist_ok=True) 
-    weight_file=os.path.join(weight_dir,dt.today().strftime("%m%d")+'.h5')
+    best_model_path=os.path.join(weight_dir,dt.today().strftime("%m%d")+'_'+parser.suffix+'.h5')
 
 
 
@@ -52,7 +53,7 @@ def train(parser):
     train_steps, valid_steps, test_steps = loader.return_step()
     # ---------------------------model----------------------------------
 
-    input_channel_count = parser.input_channel
+    input_channel_count = parser.channel
     output_channel_count = 3
     first_layer_filter_count = parser.filter
 
@@ -66,13 +67,12 @@ def train(parser):
     if not ON_WIN:
         model = multi_gpu_model(model, gpus=2)
     
-    optimizer = tf.keras.optimizers.Adam(lr=parser.trainrate)
+    optimizer = tf.keras.optimizers.Adam()
     # model.compile(loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice, dice_1, dice_2])
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=[dice, dice_1, dice_2])
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=[dice, dice_1_2, dice_2_2])
     model.summary()
     # ---------------------------training----------------------------------
 
-    batch_size = parser.batch_size
     epochs = parser.epoch
 
     config = tf.ConfigProto()
@@ -85,12 +85,11 @@ def train(parser):
 
     tb_cb = TensorBoard(log_dir=logdir, histogram_freq=0, write_graph=True, write_images=True)
     es_cb = EarlyStopping(monitor='val_loss', patience=parser.early_stopping, verbose=1, mode='auto')
-    mc_cb = ModelCheckpoint(filepath=weight_file, monitor='val_loss', verbose=1, save_best_only=True,
+    mc_cb = ModelCheckpoint(filepath=best_model_path, monitor='val_loss', verbose=1, save_best_only=True,
                             save_weights_only=False, mode='min', period=1)
     print('dnum is:',d_num)
     print("start training.")
     print(valid_steps)
-    # Pythonジェネレータ（またはSequenceのインスタンス）によりバッチ毎に生成されたデータでモデルを訓練します．
     history = model.fit_generator(
         generator=train_gen,
         steps_per_epoch=train_steps,
@@ -100,19 +99,20 @@ def train(parser):
         use_multiprocessing=False,
         validation_steps=valid_steps,
         validation_data=valid_gen,
-        # use_multiprocessing=True,
         callbacks=[es_cb, tb_cb,mc_cb])
 
     print("finish training. And start making predict.")
 
+    del model
+    model=load_model(best_model_path)
+
     # ---------------------------predict----------------------------------
+    
 
     test_preds = model.predict_generator(test_gen, steps=test_steps, verbose=1)
     ELAPSED_TIME = int(time.time() - START_TIME)
-    reporter.add_log_documents(f'ELAPSED_TIME:{ELAPSED_TIME} [sec]')
-
+    # reporter.add_log_documents(f"ELAPSED_TIME:{ELAPSED_TIME}[sec]")
     # ---------------------------report----------------------------------
-
     parser.save_logs = True
     if parser.save_logs:
         reporter.add_val_loss(history.history['val_loss'])
@@ -156,24 +156,22 @@ def get_parser():
     parser = argparse.ArgumentParser(
         prog='generate parallax image using U-Net',
         usage='python main.py',
-        description='This module　generate parallax image using U-Net.',
+        description='This module generate parallax image using U-Net.',
         add_help=True
     )
 
     parser.add_argument('-e', '--epoch', type=int,
                         default=200, help='Number of epochs')
     parser.add_argument('-f', '--filter', type=int,
-                        default=48 if ON_WIN else 64, help='Number of model first_filters')
+                        default=48 if ON_WIN else 48, help='Number of model first_filters')
     parser.add_argument('-b', '--batch_size', type=int,
                         default=32 if ON_WIN else 64, help='Batch size')
     parser.add_argument('-t', '--trainrate', type=float,
                         default=1e-3, help='Training rate')
     parser.add_argument('-es', '--early_stopping', type=int,
                         default=5, help='early_stopping patience')
-    parser.add_argument('-i', '--input_channel', type=int,
-                        default=1, help='input_channel')
     parser.add_argument('-d', '--d_num', type=int,
-                        default=3, help='directory_number')
+                        default=1, help='directory_number')
     parser.add_argument('-a', '--augmentation',
                         action='store_true', help='Number of epochs')
     parser.add_argument('-s', '--save_logs',
@@ -185,6 +183,14 @@ def get_parser():
     parser.add_argument('-ap', '--output_predict',
                         action='store_true', help='If true. store predict')
     parser.add_argument('-sf', '--suffix',type=str,default='',help='suffix_output_folder_name')
+    
+    parser.add_argument('-sp', '--split',type=int,default=1,help='split')
+    parser.add_argument('-c', '--channel',type=int,default=1,help='channel')
+    
+    parser.add_argument('-un', '--use_no_c',action='store_false',help='use_no_cancer')
+
+
+
                      
     return parser
 

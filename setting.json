@@ -4,7 +4,7 @@
         "sagittal_label": "./data/label_sagittal2",
         "image": "./data/image",
         "label": "./data/label",
-        "max_sagittal":"./data/input/max/"
+        "max_sagittal":"./data/input/max/sagittal"
 
     },
     "FIXED_SIZES": [

@@ -91,6 +91,12 @@ class Reporter:
         #early_stoppingを考慮
         self.parameters.append("Number of epochs:" + str(len(history.history['val_loss'])))
         self.parameters.append("Batch size:" + str(self.parser.batch_size))
+        self.parameters.append("fillter_size:"+str(self.parser.filter))
+        self.parameters.append("early stopping patience:"+str(self.parser.early_stopping))
+        self.parameters.append("split:"+str(self.parser.split))
+        self.parameters.append("input channel:"+str(self.parser.channel))
+        self.parameters.append("not use no canser slice:"+str(self.parser.use_no_c))
+        self.parameters.append("not use big canser slice:"+str(self.parser.select_area_size))
         self.parameters.append("Training rate:" + str(self.parser.trainrate))
         self.parameters.append("Augmentation:" + str(self.parser.augmentation))
         self.parameters.append("min_val_loss:" + str(min(history.history['val_loss'])))

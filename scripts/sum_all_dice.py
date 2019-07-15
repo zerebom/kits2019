@@ -41,44 +41,46 @@ def dice_2(preds,teach):
 
     return dice
 
-#linux側にデータがないので手元でやった方が良い。
-ROOT_PATH = r"C:\Users\higuchi\Desktop\kits19\data\case_00"
-PREDS_PATH= "../data/pred_sagittal2"
-dice_1_list=np.zeros(30)
-dice_2_list=np.zeros(30)
 
-for i,cid in tqdm(enumerate(range(180,210))):
-    seg_path = os.path.join(ROOT_PATH + str(cid).zfill(3), "segmentation.nii.gz")
-    raw_seg = nib.load(seg_path)
-    raw_seg = raw_seg.get_data()
+if __name__ == "__main__":
+    #linux側にデータがないので手元でやった方が良い。
+    ROOT_PATH = r"C:\Users\higuchi\Desktop\kits19\data\case_00"
+    PREDS_PATH= "../data/pred_sagittal2"
+    dice_1_list=np.zeros(30)
+    dice_2_list=np.zeros(30)
 
-    sliceIndex=get_slice_idx(raw_seg)
-    predPaths=glob.glob(os.path.join(PREDS_PATH,str(cid).zfill(3)))
-    preds_boxel=np.zeros(shape=raw_seg)
+    for i,cid in tqdm(enumerate(range(180,210))):
+        seg_path = os.path.join(ROOT_PATH + str(cid).zfill(3), "segmentation.nii.gz")
+        raw_seg = nib.load(seg_path)
+        raw_seg = raw_seg.get_data()
 
-    for idx,pred in zip(sliceIndex,predPaths):
-        pred_img=load_vol(pred)
-        preds_boxel[:,:,idx]=pred_img
+        sliceIndex=get_slice_idx(raw_seg)
+        predPaths=glob.glob(os.path.join(PREDS_PATH,str(cid).zfill(3)))
+        preds_boxel=np.zeros(shape=raw_seg)
 
-    dice_1_list[i]=dice_1(preds_boxel,raw_seg)
-    dice_2_list[i]=dice_2(preds_boxel,raw_seg)
+        for idx,pred in zip(sliceIndex,predPaths):
+            pred_img=load_vol(pred)
+            preds_boxel[:,:,idx]=pred_img
 
-print(f"""
-dice_1_mean:{np.mean(dice_1_list)}
-dice_1_std:{np.std(dice_1_list)}
-dice_2_mean:{np.mean(dice_2_list)}
-dice_2_std:{np.std(dice_2_list)}
- """)
+        dice_1_list[i]=dice_1(preds_boxel,raw_seg)
+        dice_2_list[i]=dice_2(preds_boxel,raw_seg)
+
+    print(f"""
+    dice_1_mean:{np.mean(dice_1_list)}
+    dice_1_std:{np.std(dice_1_list)}
+    dice_2_mean:{np.mean(dice_2_list)}
+    dice_2_std:{np.std(dice_2_list)}
+    """)
+
+
+
+            
+
+
 
 
 
         
-
-
-
-
-
-    
 
 
 

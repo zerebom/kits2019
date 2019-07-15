@@ -80,35 +80,6 @@ def dice(y_true, y_pred):
     return dice
 
 
-def dice_1(y_true, y_pred):
-    K = tf.keras.backend
-
-    eps = K.constant(1e-6)
-
-    truelabels = K.cast(y_true[:, :, :, 1], tf.int32)
-    predictions = K.cast(y_pred[:, :, :, 1], tf.int32)
-
-    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
-    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
-    dice_1 = 2 * intersection / (union + eps)
-
-    return dice_1
-
-
-def dice_2(y_true, y_pred):
-    K = tf.keras.backend
-
-    eps = K.constant(1e-6)
-    truelabels = K.cast(y_true[:, :, :, 2], tf.int32)
-    predictions = K.cast(y_pred[:, :, :, 2], tf.int32)
-
-    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
-    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
-    dice_2 = 2 * intersection / (union + eps)
-
-    return dice_2
-
-
 def dice_coef_loss(y_true, y_pred):
     return 1.0 - dice(y_true, y_pred)
 
@@ -125,3 +96,36 @@ def penalty_categorical(y_true,y_pred):
     weight_y = result_pow / tf.reduce_sum(result_pow)
 
     return (-1) * tf.reduce_sum( 1 / (weight_y + epsilon) * array_tf * tf.log(pred_tf + epsilon),axis=-1)
+
+
+def dice_1(y_true,y_pred):
+    eps = K.constant(1e-6)
+    truelabels = tf.argmax(y_true, axis=-1, output_type=tf.int32)
+    predictions = tf.argmax(y_pred, axis=-1, output_type=tf.int32)
+
+    #argmaxの結果が1かどうかでbool->0,1にcast
+    truelabels=tf.cast(K.equal(truelabels,1),tf.int32)
+    predictions=tf.cast(K.equal(predictions,1),tf.int32)
+
+
+    # cast->型変換,minimum2つのテンソルの要素ごとの最小値,equal->boolでかえってくる
+    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
+    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
+    dice = 2. * intersection / (union + eps)
+    return dice
+
+def dice_2(y_true,y_pred):
+    eps = K.constant(1e-6)
+    truelabels = tf.argmax(y_true, axis=-1, output_type=tf.int32)
+    predictions = tf.argmax(y_pred, axis=-1, output_type=tf.int32)
+
+    #argmaxの結果が1かどうかでbool->0,1にcast
+    truelabels=tf.cast(K.equal(truelabels,2),tf.int32)
+    predictions=tf.cast(K.equal(predictions,2),tf.int32)
+
+    # cast->型変換,minimum2つのテンソルの要素ごとの最小値,equal->boolでかえってくる
+    intersection = K.cast(K.sum(K.minimum(K.cast(K.equal(predictions, truelabels), tf.int32), truelabels)), tf.float32)
+    union = tf.count_nonzero(predictions, dtype=tf.float32) + tf.count_nonzero(truelabels, dtype=tf.float32)
+    dice = 2. * intersection / (union + eps)
+    return dice
+
