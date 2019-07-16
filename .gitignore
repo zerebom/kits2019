@@ -1,6 +1,6 @@
 data/*
 ./logs/*
-./Result/*
+./Result/**
 Result/Trained_weights/
 
 *csv
@@ -8,3 +8,4 @@ events.out.tfevents*
 *png
 *pyc
 parameter.txt
+Result/*

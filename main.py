@@ -69,7 +69,7 @@ def train(parser):
     
     optimizer = tf.keras.optimizers.Adam()
     # model.compile(loss=[DiceLossByClass(im_size, 3).dice_coef_loss], optimizer=optimizer, metrics=[dice, dice_1, dice_2])
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=[dice, dice_1_2, dice_2_2])
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=[dice, dice_1, dice_2])
     model.summary()
     # ---------------------------training----------------------------------
 
@@ -104,7 +104,11 @@ def train(parser):
     print("finish training. And start making predict.")
 
     del model
-    model=load_model(best_model_path)
+    model=load_model(best_model_path,custom_objects={
+        'dice':dice,
+        'dice_1':dice_1,
+        'dice_2':dice_2,
+    })
 
     # ---------------------------predict----------------------------------
     
@@ -125,6 +129,7 @@ def train(parser):
 
         train_gen, valid_gen, test_gen, output_gen_path = loader.return_gen(return_path=True)
 
+
         for i in range(min(train_steps, SAVE_BATCH_SIZE)):
             batch_input, batch_teach = next(train_gen)
             batch_preds = model.predict(batch_input)
@@ -144,12 +149,11 @@ def train(parser):
         print('make output_predict')
         _, _, test_gen, output_gen_path = loader.return_gen(return_path=True)
         for i in range(test_steps):
+            print(i,end='')
             batch_output_path = next(output_gen_path)
             batch_input, batch_teach = next(test_gen)
             batch_preds = model.predict(batch_input)
             reporter.output_predict(batch_preds,batch_output_path,suffix=parser.suffix)
-
-
 
 
 def get_parser():
@@ -180,7 +184,7 @@ def get_parser():
                         action='store_true', help='Unet8 or Unet')
     parser.add_argument('-as', '--select_area_size',
                         action='store_true', help='If true. eliminate big kidney')
-    parser.add_argument('-ap', '--output_predict',
+    parser.add_argument('-op', '--output_predict',
                         action='store_true', help='If true. store predict')
     parser.add_argument('-sf', '--suffix',type=str,default='',help='suffix_output_folder_name')
     

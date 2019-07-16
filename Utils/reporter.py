@@ -8,7 +8,7 @@ from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, 
 import re
 import SimpleITK as sitk
 from datetime import datetime as dt
-
+from pathlib import Path
 
 class Reporter:
     ROOT_DIR = "Result"
@@ -42,9 +42,9 @@ class Reporter:
 
     def generate_main_dir(self):
         # main_dir = self.val_loss + '_' + dt.today().strftime("%Y%m%d_%H%M") + '_' + self.model_name
-        main_dir = str(self.d_num) + '_' + self.val_dice + '_' + dt.today().strftime("%Y%m%d_%H%M") + '_' + self.model_name
-        self.main_dir = os.path.join(self._root_dir, main_dir)
-        os.makedirs(self.main_dir, exist_ok=True)
+        main_dir = str(self.d_num) + '_' + self.val_dice + '_' + dt.today().strftime("%Y%m%d_%H%M") + '_' + self.parser.suffix
+        self.main_dir = Path(os.path.join(self._root_dir, main_dir))
+        os.makedirs(str(self.main_dir), exist_ok=True)
 
     def create_dirs(self):
         os.makedirs(self._root_dir, exist_ok=True)
@@ -119,7 +119,7 @@ class Reporter:
             save_folder='train',
             batch_num=1) -> 'im':
         for i in range(batch_input.shape[0]):
-            os.makedirs(os.path.join(self.main_dir, save_folder), exist_ok=True)
+            os.makedirs(str(self.main_dir/save_folder), exist_ok=True)
             
             #one_hot->grayscaleに変換している。
             pred = np.argmax(batch_pred[i, :, :, :],axis=2)
@@ -137,18 +137,25 @@ class Reporter:
             vol =batch_input[i, :, :, :]
             vol=255*vol/(np.max(vol)-np.min(vol))
             vol_im=vol.astype(np.uint8)
-            
-            array_to_img(vol_im).save(os.path.join(self.main_dir,save_folder,f'input_{self.parser.batch_size*batch_num+i}.png'))
-            seg_im.save(os.path.join(self.main_dir,save_folder,f'pred_{self.parser.batch_size*batch_num+i}.png'))
+            try:
+                array_to_img(vol_im).save(str(self.main_dir/save_folder/f'input_{self.parser.batch_size*batch_num+i}.png'))
+            except:
+                pass
 
-    def output_predict(self,batch_preds,batch_output_paths,suffix):
-        for pred,path in zip(batch_preds,batch_output_paths):
-            path=re.sub('/preds',f'/preds/{dt.today().strftime("%m%d")}_{suffix}',path)
-            folder,name=os.path.split(path)
-            os.makedirs(folder,exist_ok=True)
+            seg_im.save(str(self.main_dir/save_folder/f'pred_{self.parser.batch_size*batch_num+i}.png'))
+
+    def output_predict(self,batch_preds,batch_input_paths,suffix):
+        for pred,path in zip(batch_preds,batch_input_paths):
+           
+            path=Path(path)
+            slice_name=path.name
+            cid=path.parents[1].name
+
+            folder=self.main_dir/'preds'/cid
+            os.makedirs(str(folder),exist_ok=True)
             
             pred_im=sitk.GetImageFromArray(pred)
-            sitk.WriteImage(pred_im,path,True)
+            sitk.WriteImage(pred_im,str(folder/slice_name),True)
 
 
 
