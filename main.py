@@ -12,8 +12,10 @@ from tensorflow.python import keras
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
-from Models.Unet8 import UNet8
-from Models.Unet import UNet 
+from Models.UNet8 import UNet8
+from Models.UNet5 import UNet5
+from Models.UNet4 import UNet4
+from Models.UNet7 import UNet7
 from Utils.dice_coefficient import dice, dice_1, dice_2, dice_coef_loss, DiceLossByClass
 from tensorflow.python.keras.utils import Sequence, multi_gpu_model, plot_model
 import time
@@ -57,11 +59,14 @@ def train(parser):
     output_channel_count = 3
     first_layer_filter_count = parser.filter
 
-    if parser.eito:
+    if parser.layer==4:
+        network = UNet4(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+    elif parser.layer==5:
+        network = UNet5(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+    elif parser.layer==7:
+        network = UNet7(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
+    elif parser.layer==8:
         network = UNet8(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
-    else:
-        network = UNet(input_channel_count, output_channel_count, first_layer_filter_count, im_size=im_size, parser=parser)
-
 
     model = network.get_model()
     if not ON_WIN:
@@ -83,7 +88,7 @@ def train(parser):
     logdir = os.path.join('./logs', dt.today().strftime("%Y%m%d_%H%M"))
     os.makedirs(logdir, exist_ok=True)
 
-    tb_cb = TensorBoard(log_dir=logdir, histogram_freq=0, write_graph=True, write_images=True)
+    tb_cb = TensorBoard(log_dir=logdir, histogram_freq=1, write_graph=False, write_images=True,batch_size=parser.batch_size)
     es_cb = EarlyStopping(monitor='val_loss', patience=parser.early_stopping, verbose=1, mode='auto')
     mc_cb = ModelCheckpoint(filepath=best_model_path, monitor='val_loss', verbose=1, save_best_only=True,
                             save_weights_only=False, mode='min', period=1)
@@ -180,8 +185,7 @@ def get_parser():
                         action='store_true', help='Number of epochs')
     parser.add_argument('-s', '--save_logs',
                         action='store_true', help='save or not logs')
-    parser.add_argument('-ei', '--eito',
-                        action='store_true', help='Unet8 or Unet')
+    parser.add_argument('-l', '--layer',type=int,default=4, help='Number of layer of Unet')
     parser.add_argument('-as', '--select_area_size',
                         action='store_true', help='If true. eliminate big kidney')
     parser.add_argument('-op', '--output_predict',

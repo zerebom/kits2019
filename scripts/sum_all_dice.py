@@ -9,7 +9,10 @@ from tqdm import tqdm_notebook,tqdm
 import os
 import numpy as np
 
-
+"""
+python3 output_dice.py -pf 1_0.86_20190716_1416_unet7_c1
+python3 predict.py 
+"""
 def load_seg(vol_path):
     vol_img = sitk.ReadImage(vol_path)
     vol_img = sitk.GetArrayFromImage(vol_img)

@@ -45,6 +45,10 @@ class Reporter:
         main_dir = str(self.d_num) + '_' + self.val_dice + '_' + dt.today().strftime("%Y%m%d_%H%M") + '_' + self.parser.suffix
         self.main_dir = Path(os.path.join(self._root_dir, main_dir))
         os.makedirs(str(self.main_dir), exist_ok=True)
+    
+    def generate_main_dir2(self,dir):
+        self.main_dir = Path(dir)
+        os.makedirs(str(self.main_dir), exist_ok=True)
 
     def create_dirs(self):
         os.makedirs(self._root_dir, exist_ok=True)
@@ -73,11 +77,15 @@ class Reporter:
         plt.figure()
         plt.plot(history.history['dice'], linewidth=1.5, marker='o')
         plt.plot(history.history['val_dice'], linewidth=1., marker='o')
+        plt.plot(history.history['val_dice_1'], linewidth=1., marker='o')
+        plt.plot(history.history['val_dice_2'], linewidth=1., marker='o')
+
+
         plt.tick_params(labelsize=20)
         plt.title('model dice')
         plt.xlabel('epoch')
         plt.ylabel('dice')
-        plt.legend(['dice', 'val_dice'], loc='lower right', fontsize=18)
+        plt.legend(['dice', 'val_dice','val_dice_1','val_dice_2'], loc='lower right', fontsize=18)
         plt.tight_layout()
         plt.savefig(os.path.join(self.main_dir, 'dice' + self.IMAGE_EXTENSION))
 
@@ -146,7 +154,8 @@ class Reporter:
 
     def output_predict(self,batch_preds,batch_input_paths,suffix):
         for pred,path in zip(batch_preds,batch_input_paths):
-           
+            pred = np.argmax(pred[:, :, :],axis=2).astype(np.uint8)
+
             path=Path(path)
             slice_name=path.name
             cid=path.parents[1].name

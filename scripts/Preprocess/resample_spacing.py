@@ -47,7 +47,7 @@ def main(parser):
     output_dir=Path(parser.output_dir).resolve()
 
     for i,imagepath in enumerate(sorted(input_dir.glob("*/imaging.nii.gz"))):
-        if i <80:continue
+
             
         print(imagepath)
         outputfile=output_dir / imagepath.parents[0].stem /'image'
